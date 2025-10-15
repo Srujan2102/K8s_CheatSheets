@@ -1,0 +1,40 @@
+September 9th k8s k8s restart policy class
+******************************************
+
+k8s restart policy --> practical is not recommended
+******************
+
+pod level and container level is same only
+
+k8s restart policy documentation
+
+ pod-level container restart policy consists of 3 types 
+ 
+1. Always -->   Automatically restarts the container after any termination except if the pod is success
+2. OnFailure --> only restarts the container if it exists with any error (non-zero exit status)
+3. Never --> Does not automatically restart the terminated container
+
+eg: if the pod is failed it shows termination  --> for this if we write restart policy 
+
+how to write manifest file for restart policy?
+**********************************************
+
+vi restart-policy.yaml
+**********************
+
+apiVersion: v1
+kind: Pod
+metadata: 
+  name: cluster-pod-1
+  labels: 
+    app: payment-app
+spec: 
+  restartPolicy: OnFailure # By default always
+  containers: 
+    - name: app-image-1 
+      image: nginx 
+      ports:
+        - containerPort: 80 
+          protocol: TCP
+
+your pod is terminated who will tell the status of this? --> probes will tell

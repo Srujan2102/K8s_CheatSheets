@@ -1,0 +1,124 @@
+September 12th k8s Requests and limits class
+********************************************
+
+Requests and limits
+*******************
+
+For pod level we have requests and limits
+
+eg: we are having an application of Zomato in that we have order service in this service there are 4 pods running in a healthy workernode with storage of 500gb with t2.micro but our pods size is 600gb 
+
+when we deploy the pods in worker node we use request and  limit for the cpu and memory 
+
+Request --> giving the size particularly
+limit --> don't cross the size
+
+1. create a ec2 machine(ubuntu)
+2. increase the stress(cpu load increase)
+
+
+# This is used to login to the vm 
+*********************************
+
+ssh ubuntu@ip 
+sudo apt update 
+sudo apt install stress -y
+stress --cpu 8 --io 4 --vm 2 --vm-bytes 300M --> it is used to increase the cpu and memory
+
+
+open another vm for safety prupose
+**********************************
+ssh ubuntu@ip
+htop --> before stress it took free memory
+htop --> after stress it is full
+
+
+If the pod memory shows full i.e, OOM
+
+For automation purpose
+**********************
+
+create a repository in GitHub pod R&L
+cd downloads
+mkdir R&L
+cd R&L
+code .
+
+
+In visual studio write the manifest file 
+
+R&L.yaml
+********
+
+apiVersion: v1 
+kind: Pod
+metadata: 
+  name: stress-pod 
+  labels:
+    env: dev
+  spec: 
+    containers: 
+      - name: stress-container
+        image: progrium/stress 
+        ports: 
+          - containerPort: 80 
+            protocol: TCP 
+        command: ["stress", "--vm","2", "--vm-bytes", "200m"]   # This is just a dummy command
+        resources: 
+          requests: 
+            memory: "100mi" # mi --> mebibytes
+            cpu: "150m"  # 1 cpu called as millicores
+          limits:  # container can not cross this boarder
+            CPU: 200m
+            memory: 150mi
+
+In power shell 
+**************
+	git clone of pod R&L
+	cd pod_R&L  
+	git add .
+	git commit -m "add my stress pod"
+	git push 
+
+if we open our GitHub repository we will see the  manifest file
+
+
+--------------------------------------------------------------
+Install Eks Cluster
+*******************
+
+ssh ubuntu@publicip
+sudo apt install unzip -y
+how to install aws cli documentation  
+aws configure --> to establish connection
+how to install eksctl in ubuntu 24.04 
+how to install kubectl in ubuntu 24.04 
+	select the 3rd method
+eksctl create cluster 
+
+kubectl get nodes
+git clone pod_R&L
+cd pod_R&L
+ls
+kubectl apply -f .
+kubectl get po -w --> it shows OOM(out of memory) because when it takes more size it gets OOMkilled 
+
+
+again change in the command in vs studio from 200m to 100m 
+
+In power shell 
+**************
+	git add .
+	git commit -m "update"
+	git push
+
+In cluster 
+**********
+	kubectl delete pod stress-pod
+	git pull 
+	kubectl apply -f .
+	kubectl get po -w --> now it created a pod and shows running status
+
+
+
+

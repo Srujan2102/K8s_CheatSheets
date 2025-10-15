@@ -1,0 +1,200 @@
+September 10th k8s pod probes class
+***********************************
+
+pod probes/health checks
+************************
+
+eg: Assume that you have 2 or more pods in the worker node and that are running in that by mistake one pod is deleted --> for this we used to check through pod probes/health checks(it is a pod/container status based)
+
+pod probes in k8s --> documentation --> mainly asked from this for interview
+
+probes are of 3 types
+*********************
+1. startup probe --> it just checks whether your container is running or not
+	--> it verifies whether the application within a container is started or not then its startup is good
+	--> if application container is not started your startup probe will restart your application container
+	--> this startup probe won't wait for other probes it periodically does its work
+
+2. liveness probe 
+	--> it determine when to restart a container
+	--> if a container fails its liveness probe repeatedly the kubelet restarts the container
+	--> It does not wait for readiness probes to succeed
+
+3. Readiness probe --> it only considers running
+	--> if it returns failed state k8s removes the pod from all matching service endpoints
+	--> Readiness probes run on the container during its whole lifecycle
+
+----------------------------------------------------------------------------------------
+
+for creating EKS cluster
+************************
+
+sudo apt update -y
+sudo apt install unzip -y
+search for aws-cli documentation --> how to install aws cli on ubuntu
+aws --version
+search for terraform documentation ---> how to install terraform on ubuntu
+terraform --version
+aws configure
+git clone of terraform eks cluster 
+cd <>
+how to enable terraform public address---> add the associate_pulic_ip_address=true in nodegroup eks cluster # exclude this point because we can't add this to the main.tf
+
+terraform init
+terraform apply -auto-approve
+
+---->Here we use the automation through GitHub  with out copy paste for this purpose 
+create a new repo ---> pod_probes then create it and clone it 
+
+In powershell
+	mkdir pod_probes
+	cd pod_probes
+	git clone paste the git link
+	code . ---> opens visual studio
+
+
+1. startup probe manifest file
+   ***************************
+
+when you start the startup probe we have to check through 4 ways for status of the pod
+
+1. httpGet --> give the pod ip or path(route path) ---->  eg: http://<path>:80  i.e, path means ip address
+2. grpc(google remote Procedure calls) --> eg: http://<path>:80
+3. tcpSocket --> it uses port number
+4. exec --> your request sends through commands like cat, touch
+
+If I send 1 or more than 3 requests to pod if it gives the response it is alive if not it is terminated or running
+
+How to check the requests?
+**************************
+
+initialDelaySeconds: 10  --> atleast it takes to initialize for 10 seconds
+periodSeconds: 5  -> its about how many requests I have sent in 5 seconds
+successThreshold: 1 --> atleast one request is sent
+failureThreshold: 3 --> if it reaches 3 request it shows it is in failure state
+
+----> visual studio inside this we write the pod_probe manifest file copy this and paste it in vi editor
+
+vi pod.yaml
+
+apiVersion: v1
+kind: Pod
+metadata: 
+  name: startup-pod
+  labels:
+    app: dev-pod
+    env: dev
+spec: 
+  containers:
+    - name: log-startup-container
+      image: busybox 
+      ports: 
+        - containerPort: 80  # it is not mandatory
+          protocol: TCP 
+      livenessProbe:
+      startupProbe:
+        httpGet:
+          port: 80 
+          path: /sujan    # by giving the / it checks the path. sujan is a sub path   / is a root path i.e, container public ip address
+        initialDelaySeconds: 10 
+        periodSeconds: 5
+        successThreshold: 1  # minimum we should give 1
+        failureThreshold: 3  # minimum we should give 3
+
+kubectl apply -f . 
+kubectl get po --> it shows crashLoopBackOff error because of image
+kubectl describe pod startup-pod
+
+if we want to change the spec level we have to delete the pod because it is immutable
+
+2. livenessProbe
+   *************
+
+
+vi pod.yaml 
+
+apiVersion: v1
+kind: Pod
+metadata: 
+  name: livenessprobe-pod
+  labels:
+    app: dev-pod
+    env: dev
+spec: 
+  containers:
+    - name: log-startup-container
+      image: busybox 
+      ports: 
+        - containerPort: 80  # it is not mandatory
+          protocol: TCP 
+      livenessProbe:
+        tcpSocket:
+          port: 80
+      startupProbe:
+        httpGet:
+          port: 80 
+          path: /sujan    # by giving the / it checks the path.    / is a root path
+        initialDelaySeconds: 10 
+        periodSeconds: 5
+        successThreshold: 1  # minimum we should give 1
+        failureThreshold: 3  # minimum we should give 3 
+
+kubectl apply -f .
+
+kubectl get po --> it shows the crashloopbackoff error
+
+kubectl describe pod livenessprobe-pod
+
+
+
+3. readinessProbe
+
+when ever my container is shutdown it removes the traffic from the service
+
+services are communicated to pods through labels 
+
+when ever pod is down it removes the traffic from the service when we give readiness probe
+
+
+vi pod.yaml
+
+apiVersion: v1
+kind: Pod
+metadata: 
+  name:  readinessProbe-pod
+  labels:
+    app: dev-pod
+    env: dev
+spec: 
+  containers:
+    - name: log-startup-container
+      image: busybox 
+      ports: 
+        - containerPort: 80  # it is not mandatory
+          protocol: TCP 
+      livenessProbe:
+        tcpSocket:
+          port: 80
+      readinessProbe:
+        exec: 
+          command:
+            - touch sujan 
+            - tail -f /var/log/busybox/error.log 
+      startupProbe:
+        httpGet:
+          port: 80 
+          path: /sujan    # by giving the / it checks the path.    / is a root path
+        initialDelaySeconds: 10 
+        periodSeconds: 5
+        successThreshold: 1  # minimum we should give 1
+        failureThreshold: 3  # minimum we should give 3 
+
+kubectl apply -f .
+kubectl get po 
+kubectl describe pod  readinessProbe-pod
+
+
+
+complete the task by getting success my replacing the image with different
+
+	

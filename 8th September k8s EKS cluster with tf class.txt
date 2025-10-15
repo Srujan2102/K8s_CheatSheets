@@ -1,0 +1,323 @@
+8th September k8s EKS cluster with tf class
+*******************************************
+
+1. eks cluster with terraform for this instance install below
+   **********************************************************
+	1. aws cli --> official documentation of aws cli on ubuntu
+	2. terraform install -->how to install terraform on ubuntu/how to install terraform particular on 24.04 -> prefer this
+	3. aws configuration
+	4. kubectl install
+
+2. k8s service --> how many types
+
+------------------------------------------------
+
+create an instance of t2.micro with storage of 18gb  copy the public ip and make the connection with the instance through power shell
+
+ssh ubuntu@ip
+sudo apt update -y
+sudo apt install unzip -y
+paste the official documentation of aws cli ---> curl command
+
+aws --version
+paste the terraform documentation
+terraform --version
+
+aws configure  
+	check the region while cloning the terraform template
+
+eks cluster with terraform --> official documentation of provision an eks cluster
+clone the terraform template from the official document of terraform
+
+how to enable aws ec2 terraform public key -> for documentation
+	associate_public_ip_address = true
+
+cd learn-terraform-provision-eks-cluster --> we have to enable the public ip
+	vi main.tf 
+	in eks_managed_node_groups  we have to paste the public key of terraform and enable to true --> if it not works search for another template
+
+terraform init
+ls -al --> shows the .terraform folder
+
+terraform apply -auto-approve
+
+kubectl get nodes -> it doesnot show for this we need to install kubectl
+
+how to install kubectl in ubuntu 24.04 --> for installing kubectl
+
+now check the nodes whether created or not 
+aws eks --region us-east-2 update-kubeconfig --name (name of cluster) --> this command is used to run the kubectl worker nodes
+
+kubectl get nodes --> now shows the nodes 
+
+vi cluster-pod.yaml
+*******************
+
+---
+apiVersion: v1
+kind: Pod
+metadata: 
+  name: cluster-pod-1
+  labels: 
+    app: payment-app or ENV: DEV-PAYMENT
+spec: 
+  containers: 
+    - name: app-image-1 
+      image: nginx 
+      ports:
+        - containerPort: 80 
+          protocol: TCP
+
+---
+
+apiVersion: v1
+kind: Pod
+metadata: 
+  name: cluster-pod-2
+  labels: 
+    app: payment-app
+spec: 
+  containers: 
+    - name: app-image-2 
+      image: nginx 
+      ports:
+        - containerPort: 80 
+          protocol: TCP
+
+---
+
+apiVersion: v1
+kind: Pod
+metadata: 
+  name: cluster-pod-3
+  labels: 
+    app: payment-app
+spec: 
+  containers: 
+    - name: app-image-3
+      image: nginx 
+      ports:
+        - containerPort: 80 
+          protocol: TCP
+---
+apiVersion: v1
+kind: Pod
+metadata: 
+  name: cluster-pod-4
+  labels: 
+    app: payment-app
+spec: 
+  containers: 
+    - name: app-image-4 
+      image: nginx 
+      ports:
+        - containerPort: 80 
+          protocol: TCP
+
+vi svc.yaml
+***********
+
+apiVersion: v1
+kind: Service
+metadata: 
+  name: my-svc 
+spec: 
+  selector: 
+    app: payment-app or ENV: DEV-PAYMENT  # used to communicate with the pods by using selector in service
+  type: "ClusterIP" or NodePort
+  ports:
+    - port: 80 
+      protocol: TCP # it is not mandatory
+      targetPort: 80
+      
+
+kubectl apply -f .
+
+kubectl get pods --> shows 4 pods are running
+kubectl get svc ---> shows the type of service and in clusterip it shows private ip address
+	copy the clusterip in the pod and check whether there is any communication or not but only in internal communication purpose only
+
+kubectl exec -it cluster-pod-1 -- bash  ---> enters in to the pod
+	curl http://clusterip address:80 --> shows the content
+	exit 
+
+cd learn-terraform 
+terraform destroy
+
+----------------------------------------------------------------------------------------------------------
+
+2. pod --> smallest deployment unit 
+
+when ever all pods communicate with service we will get the ip address and when ever my pod is down it automatically creates new pod and ip address for this we should use static ip i.e, service 
+
+k8s service types
+*****************
+service is nothing but workload or resource 
+if we delete the service it does not change the ip address because it is a static if we change forcebly then it changes 
+when it comes to pod if it gets deleted it creates another pod with different ip address
+
+1. Cluster ip --> for internal access / internal communication purpose we use this 
+  eg: inside the pod
+  eg: whenever you pod and service is deleted your clusterip doesn't change
+
+2. Node port  ---> used for external purpose (30000- 32767)
+  eg: whenever you pod gets deleted it creates a new ip when service gets deleted it doesn't create new ip because by default it creates static ip  
+  eg: we can change the service ip only by forcibly than only it will change
+
+ Q. By mistake your service gets deleted what will you do? --> the ip address will not change because it is defaultly static 
+
+3. Loadbalancer
+
+4. External name/external DNS name
+
+eg1: hdfc bank that has 4 pods which is of payment type attached to the service that pods have diff ip address and also it has label for the pod  that service use diff types of services
+
+------------------------------------------------
+
+2. nodeport 
+
+eg2: hdfc bank that has 4 pods that communicate through the labels with the service and each pod has different ip address for that purpose we need to access externally 
+
+
+vi node-pod.yaml
+****************
+
+---
+apiVersion: v1
+kind: Pod
+metadata: 
+  name: payment-app-1
+  labels: 
+    ENV: DEV-PAYMENT
+spec: 
+  containers: 
+    - name: payment-image-1 
+      image: nginx 
+      ports:
+        - containerPort: 80 
+          protocol: TCP
+
+---
+
+apiVersion: v1
+kind: Pod
+metadata: 
+  name: payment-app-2
+  labels: 
+    ENV: DEV-PAYMENT
+spec: 
+  containers: 
+    - name: payment-image-2 
+      image: nginx 
+      ports:
+        - containerPort: 80 
+          protocol: TCP
+
+---
+
+apiVersion: v1
+kind: Pod
+metadata: 
+  name: payment-app-3
+  labels: 
+    ENV: DEV-PAYMENT
+spec: 
+  containers: 
+    - name: payment-image-3
+      image: nginx 
+      ports:
+        - containerPort: 80 
+          protocol: TCP
+---
+apiVersion: v1
+kind: Pod
+metadata: 
+  name: payment-app-4
+  labels: 
+    ENV: DEV-PAYMENT
+spec: 
+  containers: 
+    - name: payment-image-4 
+      image: nginx 
+      ports:
+        - containerPort: 80 
+          protocol: TCP
+
+vi svc.yaml
+***********
+
+apiVersion: v1
+kind: Service
+metadata: 
+  name: svc-payment 
+spec: 
+  selector: 
+   ENV: DEV-PAYMENT  # used to communicate with the pods by using selector in service
+  type: NodePort
+  ports:
+    - port: 80 
+      protocol: TCP
+      targetPort: 80
+      nodePort: 32000 # not mandatory
+
+kubectl apply -f .
+
+kubectl get po 
+kubectl get svc
+
+kubectl exec -it payment-app-3 -- bash 
+
+	curl http://privateip address:80
+
+--> while doing eks with terraform we are not getting public ip
+
+-----------------------------------------------
+
+3. LoadBalancer
+
+copy the same pods and delete the existing service 
+kubectl delete service svc-payment  ---> deletes the service
+
+vi svc.yaml
+
+apiVersion: v1
+kind: Service
+metadata: 
+  name: my-svc 
+spec: 
+  selector: 
+   ENV: DEV-PAYMENT     # used to communicate with the pods by using selector in service
+  type: LoadBalancer
+  ports:
+    - port: 80 
+      protocol: TCP
+      
+       
+
+kubectl apply -f svc.yaml 
+
+kubectl get all --> shows all pods and services
+	copy the ip address of loadbalancer and paste it in the separate tab so that we can see the output
+	
+-------------------------------------------------
+
+4. External name  ----> it doesnot require ip address but indirectly communicate with ip address i.e,-->(Nslook up is used to check the DNS)
+
+eg: iam taking a payment micro service that communicates with the service for this we are using external name that does not require ip address but indirectly it communicates with ip address to access the application
+
+vi svc.yaml
+
+apiVersion: v1
+kind: Service
+metadata: 
+  name: my-svc 
+spec: 
+  selector: 
+   ENV: DEV-PAYMENT     # used to communicate with the pods by using selector in service
+  type: ExternalName
+  ports:
+    - port: 80 
+      protocol: TCP
+  ExternalName: "www.google.com"
+---------------------------------------------------
+

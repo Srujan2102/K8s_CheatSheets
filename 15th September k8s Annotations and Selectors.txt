@@ -1,0 +1,130 @@
+15th September k8s Annotations and Selectors 
+********************************************
+Annotations --> refer annotation in k8s
+***********
+1. It is a key/value pair
+2. External or internal communication with another resources
+3. it attach with metadata
+
+eg1: we are having 4 pods using service type as loadbalancer that gives endpoint through aws cloud in real time but it doesnot give endpoint for this purpose we use Annotations
+
+eg2: by using docker we build as custom image that store in ECR . how to call to the pod? --> for this we have to enable the endpoint for this we use Annotation inside we have to give ECR url
+	i.e, create a repo in ecr and copy the url 
+
+SonarQube annotation in k8s --> for documentation
+	eg: below ingress creation SonarQube annotation link is available copy this in manifest file
+	
+annotation manifest file
+************************
+
+apiVersion: v1 
+kind: Pod 
+metadata:
+  name: annotaion-pod
+  labels:               # labels are used for only matching purpose
+    env: prod  
+  annotations:        # annotations used for external communication purpose
+    myownecrimage: "paste the link of ecr repo"
+   # sonarurl: "http://sonar.io/project-key: enable"
+spec: 
+  containers:
+    - name: ano-co 
+      image: jenkins/jenkins
+
+-------------------------------------------------
+NameSpace
+*********
+provide a mechanism isolating groups of resource within a single cluster.
+
+particular workspace called as namespace
+it can be called as isolated area also  
+
+eg: all pods and services treated as separate namespace in a worker node . in worker node there are multiple namespaces to see that namespaces 
+
+kubectl get ns --> used to see all namespaces
+kubectl create ns devnamespace --> used to create namespaces
+kubectl get po -n devnamespace --> used to see all pod level namespaces
+kubectl api-resources --> used to see the scoped commands i.e supported and not supported --> refer this below
+
+namespaces like
+***************
+1. dev/sandbox
+2. QA
+3. UAT
+4. Nonprod/pre-prod
+5. Prod
+
+namespaces are used in env,pipelines,branching also
+
+namespace supports only in 
+1.pod
+2.services
+3.deployment
+4.replicaset
+5.ingress
+6.ingresscontroller
+7.configmap
+8.secrets 
+
+namespace doesnot support in 
+1.Node
+2.RBAC
+3.storageclass
+4.persistentvolumes
+
+kubectl api-resources --> used to see the scoped and non-scoped (i.e, what is supported and not supported)
+
+vi ns.yaml
+**********
+
+apiVersion: v1 
+kind: Pod 
+metadata:
+  name: annotaion-pod
+  labels:               # labels are used for only matchin purpose
+    env: prod  
+  namespace: prod
+  annotations:        # annotations used for external communication purpose
+    myownecrimage: "paste the link of ecr repo"
+   # sonarurl: "http://sonar.io/project-key: enable"
+spec: 
+  containers:
+    - name: ano-co 
+      image: jenkins/jenkins
+
+kubectl apply -f . --> it doesnot work because we have to create namespace
+
+kubectl create ns prod  --> used to create namespace
+
+kubectl get ns -->used to see the created namespace
+
+kubectl apply -f . --> now it shows created
+
+kubectl get po --> does not show anything
+
+kubectl config set-context --current --namespace prod --> used to enter into the namespace then only it will show the pods
+
+kubectl get po --> shows the pods
+
+kubectl describe pod annotaion-pod --> it shows every detail inside of the pod
+
+
+-------------------------------------------------------------
+
+Selectors
+*********
+
+Types of  selectors
+*******************
+1. match labels --> key:value format it has 2 types 
+   1. Equlaity based -->eg: app:zomato --> as == -> app:zomato=
+   2. Not Equality based--> eg: app:Zomato -> as != -> app:zomato!=
+
+2. match expressions --> set based labels 
+	1. key --> eg: app
+	2. operator --> In,NotIn,Exists,DoesNotExist,
+	3. values --> it is array type 
+	    eg: - Zomato 
+                - uber
+
+---------------------------------------------------------------------------

@@ -1,0 +1,266 @@
+1st and 2nd September k8s Containers and pods class
+***************************************************
+
+Artifactory hub in this spart template used in realtime
+
+Types of containers
+*******************
+1.main container.... It is a single container
+2.init container.....configuration purpose
+3.sidecar container......(logs purpose)logs pulling from main running container
+4.ambassder container --- used for additional purpose
+5.ephemeral container ---used for debugging purpose(everytime it rectifies the errors) --> when it goes down all the data will be lost 
+
+------------------------------------------------
+
+1. main container/single pod 
+
+* collection of containers called as pods
+
+a) run your application/main application run inside of the pod
+
+eg: Zomato application run on a single container= main container i.e java code/nodejs/dotnet/pyton based  run on a container i.e only one container= main container
+
+b) run a single container i.e main container= single pod 
+
+-->I will take a one image --> nginx 
+			--> define one image in the pod only
+
+vi main.yml
+***********
+
+apiVersion: v1
+kind: Pod 
+metadata:
+  name: myapp
+spec:
+  containers:
+    - name: mydummyimage
+      image: nginx:1.29.1
+
+kubectl apply -f .
+
+kubectl get po -w 
+
+
+vi main1.yaml
+*************
+
+apiVersion: v1
+kind: Pod 
+metadata:
+  name: myapp-2
+spec:
+  containers:
+    - name: mydummyimage-2
+      image: alpine
+
+kubectl apply -f . ---> dot is used to apply the changes for all manifest files
+
+
+kubectl get po -w  --> we will get CrashLoopBackOff because it is the smalles image it gets exited immediately 
+
+--> I want another image -->alpine(smallest size image)
+
+docker pull image alpine
+docker container run -d -P --name demo alpine:latest
+docker ps --> alpine doesnot have cmd
+docker container run -d -P --name demo2 alpine:latest sleep 1d --> sleep means alive for 1 day
+
+vi main2.yaml with cmd
+**********************
+
+apiVersion: v1
+kind: Pod 
+metadata:
+  name: myapp-2
+spec:
+  containers:
+    - name: mydummyimage-2
+      image: alpine
+      args: 
+        - sleep
+      command:
+	- 1d
+
+kubectl delete pod myapp-2 
+
+kubectl apply -f .
+
+kubectl get po -w --> again we will get CrashLoopBackOff
+
+
+for rectifying that error we made changes in the manifest file
+
+vi main2.yaml
+
+
+with out using args
+*******************
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-pod
+spec:
+  containers:
+    - name: myapp
+      image: alpine
+      command:
+        - sleep
+        - "1d"
+
+with using args and command
+***************************
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-pod 
+spec: 
+  containers:
+    - name: myapp 
+      image: alpine
+      args: ["1d"]
+      command: ["sleep"]
+
+by using this we will get crashlooperror --> for this in args give value and in command give string type
+****************************************
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-pod 
+spec: 
+  containers:
+    - name: myapp 
+      image: alpine
+      args: ["sleep"]
+      command: ["1d"]
+
+---------------------------------------
+
+2. Init Container --> for configuration purpose we use init
+   **************
+1Q. In your application any configurations or resource to resource communication or sometimes debugging or your main application container status check purpose in your organization which containers you use?--> we use init containers
+
+2Q. when ever apply init containers first check main container is successfully running after init contianers running i.e init containers executing
+
+3Q. How to define init containers
+
+vi init.yaml
+************
+
+apiVersion: v1
+kind: Pod 
+metadata:
+  name: init-test-pod
+spec:
+  initContainers:
+    - name: init-con-image-1
+      image: alpine
+      command:   
+        - sleep
+	- "1d"   
+    - name: init-con-image-2
+      image: alpine
+      command:   
+        - sleep
+	- "1d"   
+  containers:
+    - name: main-con
+      image: nginx 
+
+kubectl apply -f .
+kubectl get po -w --> it shows we have 2 containers because 1st it should run the main container we have to rectify it 
+
+
+Rectified manifestfile
+**********************
+
+vi init1.yaml
+*************
+
+apiVersion: v1
+kind: Pod 
+metadata:
+  name: init-pod
+spec:
+  initContainers:
+    - name: init-co
+      image: alpine
+      command: ["sh","-c", "echo '<h1> This is my main application data </h1>' >> /usr/share/nginx/html/index.html"] # -c is command
+      volumeMounts:
+        - mountPath: /usr/share/nginx/html
+          name: init-data
+  containers:
+    - name: main-app
+      image: nginx 
+      volumeMounts:
+        - name: init-data 
+          mountPath: /usr/share/nginx/html
+  volumes:
+    - name: init-data
+      emptyDir: {} # it represents a temporary directory that shares a pod's lifetime
+      
+kubectl apply -f .
+kubectl get po -w ---> it shows as running
+kubectl exec -it init-pod -- bash 
+	cd /usr/share/nginx/html
+	cat index.html --> shows the message
+	exit 
+kubectl describe pod init-pod
+
+kubectl get pod init-pod -o yaml
+------------------------------------------------
+
+3. sidecar containers ---> used for logs purpose
+
+how many people are using main conatiners and checking for logs we use sidecar containers
+
+we are trying to see the logs of init container
+
+kubectl exec -it init-pod -- bash 
+	cd /var/log/nginx --> inside nginx it shows access.log and error.log but doesnot show any data
+	
+types of logs
+*************
+1.access log 
+2.error log
+
+vi sidecar.yaml
+***************
+
+apiVersion: v1
+kind: Pod 
+metadata:
+  name: sidecar-pod
+spec:
+ containers: 
+   - name: main-container 
+     image: nginx 
+     volumeMounts: 
+       - name: nginx-logs
+         mountPath: /var/log/nginx  
+  # below image is a log image
+   - name: sidecar-container 
+     image: busybox 
+     args: ["bin/sh"]
+     command: ["-c", "tail -f /var/log/nginx/error.log"]  # these will attach with outside logs
+     volumeMounts:
+       - mountPath: /var/log/nginx 
+         name: nginx-logs 
+  volumes: 
+    - name: nginx-logs 
+      emptyDir: {}
+
+kubectl apply -f .
+kubectl get po -w
+
+kubectl logs sidecar-pod -c sidecar-container ---> it doesnot show any thing 
+
+go to the ports
+
+by applying the changes also we will get the CrashLoopBackOff error  
+
+-----------------------------------------------
+
+
+----------------

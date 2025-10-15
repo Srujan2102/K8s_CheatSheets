@@ -1,0 +1,155 @@
+17th September k8s Deployment class
+***********************************
+
+Deployment
+**********
+changing from one version to another version. 
+It supports zero time deployment/supported --> Rolling update
+eg: v1 -> v2 --> Rollout
+    v2 -> v1  --> Rollback/undo
+
+java code --> scan-> build --> generates jarfile --> build images --> pushes to ECR --> pulling from ECR --> deployment(replica is inside deployment) --> In k8s there are deployment strategies
+
+1. Recreate -> Recreating deployment terminates all the pods and replace them with new version
+
+2.** Rolling update -> A rolling deployment replaces pods running the old version of the application with the new version with out downtime. It is designed to reduce downtime to the cluster
+
+3. A/B testing -> Routes traffic to different versions based on specific user segments or rules
+
+4. Blue/Green -> deploys a new version(green) alongside the current(blue) then switches traffic once stable
+
+5. Canary -> Sends a small percentage of traffic to the new version. gradually increasing after validation
+
+6. shadow -> Clones live traffic to a new version for testing without affecting users
+
+
+Explain the sceneria based on rolling update?
+*********************************************
+
+1. How to write deployment manifest file?
+2. Explain Rolling update clearly?
+3. Based on our workernode what will we take? --> we take requests and limits size 
+
+in deployment we use operators also -->IN , NotIN, Exists, DoesNotExists
+
+dep.yaml 
+********
+
+apiVersion: apps/v1
+kind: Deployment
+metadata: 
+  name: rp-pods
+  labels: 
+    app: yellowapp
+    env: dev
+  namespace: devnamespace
+  annotations: 
+    myecrimage: "https://hub.docker.com/repository/docker/srujan2102/repo/general"
+spec: 
+  replicas: 4
+  minReadySeconds: 6
+  selector: 
+    matchExpressions:
+      - key: app  # key also should be same with label in template level
+        operator: In 
+        values: 
+          - yellowapp-pods  # this should match the label in template 
+      - key: env 
+        operator: NotIn
+        values:
+          - dev  # it doesnot create pods by mentioning NotIn
+      - key: frontend
+        operator: Exists  # by mentioning the exists it doesnot require values
+  strategy: 
+    type: RollingUpdate  # if we don't mention also it takes as a default
+    rollingUpdate: 
+      maxSurge: 1
+      maxUnavailable: 1 
+  template: 
+    metadata:
+      name: podlevellabels
+      labels: 
+        app: yellowapp-pods 
+        env: prod  # by giving the different names in the env it creates the pod if we give same then it doesnot create pod
+        frontend: web  # it doesn't creates when it available in other region
+    spec:
+      containers: 
+        - name: yellowimage
+          image: 
+          ports:
+            - name: yellowapp-ports
+              containerPort: 80
+              protocol: TCP
+          startupProbe:
+            httpGet: 
+              path: "/sujan"  #left side is root path right side is sub path for /
+              port: 80
+          livenessProbe:
+            tcpSocket: 
+              port: 80 
+          readinessProbe:
+            exec: 
+              command:
+                - echo hi  # echo is nothing but print
+             #  - touch sujanfile   # remove the touch command
+          resources:
+            requests: 
+              cpu: 100M
+              memory: 250Mi
+            limits:
+              cpu: 300M
+              memory: 300Mi
+svc.yml
+*******
+
+apiVersion: v1
+kind: Service 
+metadata: 
+  name: svc-yellow
+spec: 
+   type: LoadBalancer
+   selector: 
+     app: my-css
+   ports: 
+     - port: 80  
+
+
+In powershell
+*************
+cd myk8s-replica
+       
+git add .
+
+git commit -m "added to deploy"
+
+git push 
+
+
+--->>In production level we will use match expression in realtime
+
+
+Rolling Update
+**************
+--> in maxSurge and maxUnavailable  we can give values by --> number or percentage 
+eg: maxSurge: 1 or maxSurge:25%
+    maxUnavailable: 1 or maxUnavailable: 25%
+
+--> 4 pods running in a v1 version/old version that moves to new version can be called as v2 version/new version 
+
+eg: if i keep maxSurge: 1 --> one pod is created and one pod is deleted 
+    and comes to maxUnavailble: 1 same vise versa 
+
+if we keep the replica as 4  that means its desired state is 4
+
+
+vi dep.yaml  
+***********
+
+after the manifest file create a namespace---> kubectl create ns devnamespace
+
+kubectl get po -n devnamespace -> used to see the namespace pods
+
+
+
+------------------------------------------------------------------------------
+

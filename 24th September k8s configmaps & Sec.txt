@@ -1,0 +1,156 @@
+24th September k8s configmaps & Secrets Class
+*********************************************
+
+1. Config map
+   **********
+* Non sensitive data purpose we use config map
+
+* Pod level any configuration purpose we are using config map 
+
+* Config map define the pod level in 2 ways
+1. env -> for setting username and password 
+	in place on env we use data as a object
+2. mount
+
+eg1: in pod db container is running
+
+pod-db.yaml
+***********
+
+apiVersion: v1 
+kind: Pod
+metadata: 
+  name: mytest-pod 
+spec: 
+  containers:
+    - name: mydb-container 
+      image: mysql:9.4 
+      ports: 
+        - containerPort: 3306 
+      envFrom: 
+        - configMapRef: 
+            name: config-pod-db   
+
+
+configmap.yaml
+**************
+
+apiVersion: v1 
+kind: ConfigMap 
+metadata: 
+  name: config-pod-db 
+data:
+  MYSQL_ROOT_PASSWORD: rootroot
+  MYSQL_DATABASE: dummydata
+  MYSQL_USER: sujan
+  MYSQL_PASSWORD: admin@123
+  url: sonarqube url 
+  github_url: github url 
+
+
+  # here our username and password is sensitive so for this we have to use secrets
+
+again in manifest file remove the username and password and give those key:value in secrets manifest file. After removing that the configmap manifest as below
+
+configmap.yml
+*************
+
+apiVersion: v1 
+kind: ConfigMap 
+metadata: 
+  name: config-pod-db 
+data:
+  MYSQL_ROOT_PASSWORD: rootroot
+  MYSQL_DATABASE: dummydata
+  url: sonarqube url 
+  github_url: github url 
+
+
+  # here our username and password is not Non-sensitive so for this we have to use secrets
+
+  
+
+How to define the db container values means env? --> configmap
+
+eg2: SonarQube/aws cloud how to configure with pod? --> configmap
+
+
+2. Secrets
+   *******
+
+* For defining sensitive data purpose we use secrets 
+
+* our secrets base 64 encode and base 64 decode is possible
+
+* secrets dedfine the pod level 2 ways
+1. envFrom
+2. mount
+
+pod-db.yaml
+***********
+
+apiVersion: v1 
+kind: Pod
+metadata: 
+  name: mytest-pod 
+spec: 
+  containers:
+    - name: mydb-container 
+      image: mysql:9.4 
+      ports: 
+        - containerPort: 3306 
+      envFrom: 
+        - configMapRef: 
+            name: config-pod-db   
+        - secretRef: 
+            name: db-secret-pod
+            
+
+
+secrets.yaml
+************
+
+apiVersion: v1 
+kind: Secret
+metadata: 
+  name: db-secret-pod 
+data: 
+  MYSQL_USER: sujan # go to base 64 encode
+  MYSQL_PASSWORD: admin@123 # go to base 64 decode
+
+# It is not recommendable
+
+How to define aws secrets in pod level or deployment manifest file level?
+
+----------------------------------------------
+
+mount-pod.yaml
+**************
+also attach secrets
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mytest-pod
+spec:
+  containers:
+    - name: mydb-container
+      image: mysql:9.4
+      ports:
+        - containerPort: 3306
+      envFrom:
+        - configMapRef:
+            name: config-pod-db
+        - secretRef:
+            name: db-secret-pod
+      volumeMounts:
+        - name: mydb-data
+          mountPath: /var/lib/mysql
+  volumes:
+    - name: mydb-config
+      configMap:
+        name: config-pod-db
+    - name: mydb-data
+      secret:
+        secretName: db-secret-pod
+

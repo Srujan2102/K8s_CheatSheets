@@ -1,0 +1,115 @@
+18th Sep k8s build & deploy by images 
+*************************************
+
+create a docker file using css templates  --> css free templates documentation --> download one image from this and copy the url of that
+
+cd downloads
+mkdir docker-images
+cd docker-images
+code . 
+
+create a vm for eks cluster
+
+	
+create another vm for docker --> for creating docker images because what we took previously it is not working i.e,17th sep class
+	ssh ubuntu@publicip
+	sudo apt update -y 
+	curl of docker script
+	ls 
+	sudo sh install-docker.sh
+	sudo usermod -aG docker ubuntu
+	exit
+	ssh ubuntu@publicip --> for relogin purpose we use this again
+	docker info --> shows docker information
+	wget link of css 
+	sudo apt install unzip -y 
+	sudo unzip glass --> copy this folder to the dockerfile in ADD
+ 
+	vi Dockerfile
+	*************
+		FROM nginx:latest
+		ADD /paste the css template  /usr/share/nginx/html
+		Expose 80
+
+	docker images build -t glass:1.0 .
+	docker image ls
+	docker container run -d -P glass:1.0 
+	docker ps --> it shows up 
+		copy the port and paste it in another tab with ip address and mention :port it shows the application
+
+download another css template and copy the link
+	wget link
+	sudo unzip villa
+	
+	vi sujandockerfile
+	******************
+
+		FROM nginx:latest
+		ADD /villa /usr/share/nginx/html	
+		EXPOSE 80
+
+	docker image build -t villa:1.0 -f sujandockerfile . --> -f is used to create dockerfile with different name
+	docker image ls
+	docker container run -d -P villa:1.0 
+	docker ps 
+		copy the port and paste it in another tab with ip address and mention :port it shows the application
+
+------------------------------------
+
+	docker login 
+		copy the link and paste in separate tab and give the one time code  
+
+In docker hub
+*************
+ create a repository name as mycssimages
+
+In Docker vm
+************
+	docker tag villa:1.0 srujan2102/mycssimages:villa 
+ 
+	docker image ls --> shows the taged image 
+
+	docker push srujan2102/mycssimages:villa --> it pushes to docker hub
+
+	docker tag glass:1.0 srujan2102/mycssimages:glass
+
+	docker push srujan2102/mycssimages:glass
+
+copy the image in the manifest file
+***********************************
+in the place of image in spe level 
+
+ srujan2102/mycssimages:glass 
+
+In power shell
+**************
+cd myk8s-replica
+	git add . 
+	git commit -m "updated image"
+	git push
+
+copy the link of myk8s-replica
+
+go to eks cluster 
+*****************
+	kubectl get no 
+	git clone paste the link of myk8s-replica
+	cd myk8s-replica
+	git pull
+	kubectl apply -f . -> it won't apply because we have to create ns
+	kubectl create ns devnamespace
+
+	kubectl config set-context --current --namespace=devnamespace
+
+	kubectl apply -f .
+
+	kubectl get all
+		copy the loadbalancer i.e, external ip and paste in another tab to see the application but it doesnot show we have to rectify that
+
+errors
+******
+1. service file inside selector issue i.e label issue
+2. manifest file inside pod level label and service level label difference
+
+-----------------------------------------------------------------------------
+

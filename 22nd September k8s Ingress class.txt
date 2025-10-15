@@ -1,0 +1,268 @@
+22nd September k8s Ingress class
+********************************
+
+Flow: 
+*****
+Ingress controller -> Ingress -> services -> pods	
+
+Ingress
+*******
+Ingress communicates with multiple services
+Inside ingress we define the DNS i.e we define path like below
+	eg: www.flipkart.com/order
+	    www.flipkart.com/payment
+	    www.flipkart.com/cart
+
+These all communicate with services
+	
+It just defines the path but it doesnot open the page
+
+for external purpose we use ingress controller
+
+Roles of the ingress
+********************
+ingress inside we have 
+1. host based routing/host name
+2. path based routing/path name
+
+eg:  www.flipkart.com ---> host/rootpath
+	/payment  --> path/subpath
+
+Ingress controller 
+******************
+It maintains the traffic that send to the ingress and that sends to services for external purpose
+
+1. In AWS world it supports --> ALB
+2. In Azure  it supports --> Application Gate way
+3. Allibaba --> ALB
+4. Nginx Controllers
+
+-----------------------------------------------
+
+Ingress manifest file
+*********************
+
+1. create ingress manifest file 
+	In this we have 2 services and 2 deployment manifest files this is attached to ingress
+
+In powershell
+*************
+
+cd downloads 
+mkdir ingress-manifestfile
+cd ingress-manifestfile
+code .
+
+In visual studio 
+****************
+
+glass-dep.yaml
+**************
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mycss
+  labels:
+    env: prod
+    app: web
+  namespace: devnamespace
+  annotations:
+    kubernetes.io/change-cause: "glass-application"
+spec:
+  minReadySeconds: 6
+  replicas: 3
+  selector:
+    matchLabels:
+      app: my-css
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        app: my-css-glass
+      name: css-pod
+    spec:
+      containers:
+        - name: css-container
+          image: longflew/mycssimages:glass
+          ports:
+            - containerPort: 80
+              protocol: TCP
+          startupProbe:
+            httpGet:
+              path: /
+              port: 80
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+          resources:
+            requests:
+              cpu: "500m" 
+              memory: "1500Mi"  
+            limits:
+              cpu: "1800m"        
+              memory: "7500Mi"
+
+svc-glass.yml
+*************
+
+apiVersion: v1
+kind: Service 
+metadata: 
+  name: svc-glass
+spec: 
+   type: LoadBalancer
+   selector: 
+     app: my-css-glass
+   ports: 
+     - port: 80  
+
+----------------------------
+
+villa-dep.yaml
+**************
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mycss
+  labels:
+    env: prod
+    app: web
+  namespace: devnamespace
+  annotations:
+    kubernetes.io/change-cause: "villa-application"
+spec:
+  minReadySeconds: 6
+  replicas: 3
+  selector:
+    matchLabels:
+      app: my-css
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        app: my-css-villa
+      name: css-pod
+    spec:
+      containers:
+        - name: css-container
+          image: longflew/mycssimages:villa
+          ports:
+            - containerPort: 80
+              protocol: TCP
+          startupProbe:
+            httpGet:
+              path: /
+              port: 80
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+          resources:
+            requests:
+              cpu: "500m" 
+              memory: "1500Mi"  
+            limits:
+              cpu: "1800m"        
+              memory: "7500Mi"
+
+svc-villa.yml
+*************
+
+apiVersion: v1
+kind: Service 
+metadata: 
+  name: svc-villa
+spec: 
+   type: LoadBalancer
+   selector: 
+     app: my-css-villa
+   ports: 
+     - port: 80  
+
+********************************************
+
+ingress.yaml
+************
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: myapplications-ingress
+spec:
+  rules:
+    - host: jamimanojkumar6.xyz  # In host we have to mention DNS name
+      http:
+        paths:
+          - path: /glass
+            pathType: Prefix
+            backend:
+              service:
+                name: svc-glass
+                port:
+                  number: 80
+          - path: /villa
+            pathType: Prefix
+            backend:
+              service:
+                name: svc-villa
+                port:
+                  number: 80
+
+******************************************
+
+pathtypes 
+*********
+--> ingress backend level we use pathtypes
+
+1. Exact --> perfect url/subpath should mention
+2. Prefix --> we can give anything like /
+
+Ingress controller will be of 2 ways
+************************************
+
+1. Install manually --> DNS attach with Route 53 with records like c record, A record
+eg: 1. DNS --> www.yourfeatureworld.com
+    2. attach with your route 53
+    3. Route53 --> collection of records(DNS records)
+	a. A
+	b. c
+	c. AAAA
+    4. our DNS name store to one record
+    5. Install ingress controller
+
+2. Install Helm charts
+
+
+How to create route53? 
+**********************
+click on route53
+
+choose your starting point as --> register domain
+
+search for domain --> jamimanojkumar6.xyz 
+
+search result click on select 
+
+open cloudflare(dns) -> inside this paste the domain which we gave
+
+
+---> continue for 23rd class

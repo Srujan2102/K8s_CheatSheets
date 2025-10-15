@@ -1,0 +1,37 @@
+2nd September k8s pods class
+****************************
+
+Types of pods
+************
+1. single pod
+2. multiple pod
+**3. static pod --> we will use the specific path ----> cd etc/kubernetes/manifests/     ---> ls (it shows etcd.yaml(it is the configuration files)kube-controller-manager.yaml, kube-apiserver.yaml,kube-scheduler.yaml )
+**4. mirror pod
+
+
+static pod
+**********
+cd  etc/kubernetes/manifests/
+
+vi static-pod.yaml
+******************
+apiVersion: v1
+kind: Pod 
+metadata:
+  name: dummy-pod
+spec:
+ containers: 
+   - name: main-container 
+     image: nginx
+
+kubectl apply -f .
+
+kubectl get po --> shows the pod is running
+kubectl delete pod dummy-pod
+kubectl delete pod dummy-pod-controlplane  --> if we delete  it won't delete because it is a static pod 
+if we delete the manifest file it will delete whole pod
+
+rm -rf static-pod.yaml --> now it gets deleted
+
+kubectl get po -->now it doesn't show the pods
+

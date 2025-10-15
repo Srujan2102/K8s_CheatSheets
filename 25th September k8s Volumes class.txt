@@ -1,0 +1,84 @@
+25th September k8s Volumes class
+********************************
+
+k8s data means --> how to manage pod data?
+
+eg: when ever you create one pod by mistake your pod got deleted your data also loss?
+for this we will use Volumes
+
+k8s Volumes
+***********
+1. Volume -> whenever your pod gets deleted it automatically deletes the data also
+2. Ephemeral volumes --> used for temporary purpose it also deletes when pod deleted
+	eg:configuration,debugging
+3. persistent volume claim (PVC) -->whenever your pod gets deleted but data is alive
+4. projected volumes --> right now no one is using this 
+5. Storage class
+
+Persistent Volume Claim
+***********************
+
+pod inside data
+eg: username: sujan
+    password: sujan@123
+
+Inside the pod -->  persistent volume is default 
+  If pv request based(5gb) attach to the pvc to pod
+
+eg: storage class communicates with  pv , pv communicates with pvc ,pvc is attached to pod --> dynamical provision by externally
+
+
+  The request storage is stored in provisioning of 2 types
+
+provisioning
+************
+
+1. static provisioning ->give the own storage device/drive
+	eg: user request based ->your pvc create -> pvc + storage class -> but not create pv
+
+2. dynamic provision-> it uses external storage(EBS)
+
+ -> In aws EBS(Elastic Block Store) --> inside the storage class define the aws EBS i.e storage class speaks with dynamic provisioning
+			-> In azure azure rmi
+
+eg: In storage class we define aws EBS that forward to dynamic provision that directly communicates with pvc i.e, attached with pod and communicate with pv 
+	if our pod is deleted our EBS is still alive i.e our data is alive 
+
+pod is attached with pvc that communicate with storage class(aws EBS) 
+
+storage class request to pvc bydefault communicate with pv i.e, that pv also communicate with storage class
+
+Flow:
+*****
+storage class -> pvc attach with pod -> pv i.e pv communicate with storage class
+
+--> Data is stored in Storage class and also in pv
+
+Reclaim Policy 
+**************
+1. delete --> whenever your pod deleted you pvc also deleted
+2. Retain --> whenever your pod deleted but data is not lost
+4. Recycle --> it is not supported i.e, deprecated
+
+
+storageclass.yaml
+*****************
+
+apiVersion: storage.k8s.io/v1 
+kind: StorageClass
+metadata: 
+  name: ebs-sc
+provisioner: ebs.csi.aws.com   #dynamic provisoner
+parameters: 
+  type: "gp2"
+reclaimPolicy: Retain
+volumeBindingMode: WaitForFirstConsumer
+
+#Allowed topologies: --> by applying this it is not working so we undone this
+ # - matchLabelExpressions: 
+  #    - key: topology.kubernetes.io/region
+   #     values: ap-south-1
+  
+
+-------------------------------------------------------------------------------------------
+

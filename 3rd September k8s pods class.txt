@@ -1,0 +1,222 @@
+3rd September k8s pods class
+****************************
+
+1. pod database creation
+2. pod life cycle
+3. pod labels 
+
+
+1. pod database creation
+   *********************
+
+in the database first I will run the MySQL and run docker container and create a manifest file
+      
+in docker playground use below commands 
+**************************************
+docker info
+docker image pull MySQL 
+docker image ls
+docker container run -d -p 3306:3306 -e MYSQL_ROOT_PASSWORD=rootroot -e MYSQL_DATABASE=mysqldemopod -e MYSQL_USER=devops -e MYSQL_PASSWORD=devops --name container1 MySQL:latest 
+docker ps 
+docker exec -it container1 -- bash
+
+
+kubernetes quality of service ---> it is an open source for k8s
+
+database manifestfile in pod level env --> for documentation
+
+vi pod-database.yaml
+********************
+
+apiVersion: v1
+kind: Pod
+metadata: 
+  name: data-pod 
+spec: 
+  containers: 
+    - name: database-container
+      image: mysql 
+      env: 
+        - name: MYSQL_ROOT_PASSWORD 
+          value: "rootroot"
+        - name: MYSQL_DATABASE
+          value: "mysqldemopod"
+        - name: MYSQL_USER 
+          value: "sujan"
+        - name: MYSQL_PASSWORD 
+          value: "admin@123"
+
+kubectl apply -f .
+kubectl get po -w
+kubectl exec -it data-pod --bash 
+mysql -u sujan -p 
+	asks the passwrd: admin@123
+
+In MySQL insert some data
+
+exit from MySQL 
+
+
+used to see the data
+********************
+sudo -i 
+cd /var/lib/docker/
+cd volumes 
+ls ---> show some data
+cat meadata.db 
+
+------------------------------------------------
+
+2. pod life cycle 
+   **************
+1. pending --> pod is pending until its containers started
+2. running --> Atleast one container is running in the pod
+3. succeeded --> all containers in the pod terminated successfull
+4. failed --> one or more containers exited with non-zero status
+5. unknown --> when state of the pod cannot be determined
+
+
+vi pod-lifecycle.yaml 
+*********************
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-lifecycle 
+spec: 
+  containers: 
+    - name: lifecycleimage
+      image: nginx
+
+kubectl apply -f lifecycle.yaml
+kubectl get po -w --> used to see whether the container is created or not
+
+kubectl delete pod pod-lifecycle 
+
+
+again copy the script and mention the command [exit 0]
+******************************************************
+
+vi pod-lifecycle.yaml 
+*********************
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-lifecycle 
+spec: 
+  containers: 
+    - name: lifecycleimage
+      image: nginx
+      command: ["sh", "-c", "exit 0"]
+
+kubectl apply -f pod-lifecycle.yaml
+
+kubectl get po -w ---> after applying this script it shows completed(i.e, successfully terminated)
+
+kubectl delete pod pod-lifecycle 
+
+
+again change the command with [exit 1]
+**************************************
+
+vi pod-lifecycle.yaml 
+*********************
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-lifecycle 
+spec: 
+  containers: 
+    - name: lifecycleimage
+      image: nginx
+      command: ["sh", "-c", "exit 1"]
+
+kubectl apply -f pod-lifecycle.yaml
+
+kubectl get po -w --> it shows error i.e, failed
+
+---------------------------------------------
+
+Container Lifecycle
+*******************
+container lifecycle is also called as container status
+
+Container status
+*****************
+1. waiting --> whether the image pulled from docker hub and its waiting for that
+2. running --> Running status indicates that a container is executing with out issues
+3. terminated --> A container in the terminated stage began execution and then either ran to completion or failed for some reason
+
+---------------------------------------------
+
+3. Pod Labels:
+   **********
+when ever pod want to communicate with another resource we need labels 
+
+when ever you attach a label to pod and giving the name as web  that will communicate with resource that also should match the label
+
+for querying purpose also we use labels to fetch 
+eg: In our organization we have 1000's of pods we can find through label only
+
+
+labels in k8s --> for documentation
+
+Types of labels
+***************
+
+track: daily, weekly
+partition: customerA, customerB
+tier: frontend,backend,cache
+release: stable, canary
+environment: dev,qa, production
+
+
+vi pod-label.yaml 
+*****************
+
+---
+apiVersion: v1 
+kind: Pod
+metadata: 
+  name: pod-testing
+  labels: 
+    env: QA 
+    ver: "1.0"
+spec: 
+  containers:
+    - name: test-con 
+      image: nginx
+---
+apiVersion: v1 
+kind: Pod
+metadata: 
+  name: pod-dev
+  labels: 
+    env: DEV
+    ver: "1.1"
+spec: 
+  containers:
+    - name: dev-con 
+      image: nginx 
+
+# we used 2 pods in the same manifest file
+
+kubectl apply -f .
+
+kubectl get po
+
+kubectl describe pod pod-dev --> used to describe the label
+
+kubectl describe pod pod-testing --> used to describe the label
+
+kubectl get pods -l env=DEV --> it shows the preffered environment same for QA also
+  	
+		(or)
+
+kubectl get pods -l 'env in (DEV,QA)' --> used to see all environments 
+
+kubectl get pods -l 'env in (DEV,QA), ver in (1.0,1.1)'
+
+kubectl get pods -l 'ver in (1.0,1.1)'

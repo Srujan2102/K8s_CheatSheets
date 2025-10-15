@@ -1,0 +1,189 @@
+15th September Networking models in k8s
+***************************************
+Networking models in k8s
+************************
+1. container to container 
+2. pod to pod networking
+3. pod to service networking
+4. internet to service networking
+
+eg: In a worker node we have pods and services that are in separate namespace.
+
+
+1️⃣ Container to Container
+   **********************
+
+When two or more containers run inside the same Pod, they can talk to each other using localhost (127.0.0.1) because they share the same network namespace.
+
+📦 Example:
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mypod
+spec:
+  containers:
+    - name: app-container
+      image: nginx
+      ports:
+        - containerPort: 80
+    - name: sidecar
+      image: busybox
+      command: ['sh', '-c', 'curl http://localhost:80']
+
+
+🗣️ Explanation:
+
+Both containers are in the same Pod (mypod).
+
+sidecar can reach app-container using http://localhost:80.
+
+✅ Key Point:
+➡️ Communication is via localhost, no Service or Pod IP needed.
+
+
+***********************************************
+
+
+2️⃣ Pod to Pod Networking
+   *******************
+
+Every Pod in Kubernetes gets its own IP address.
+Pods can talk to other Pods directly using their IPs, as long as they’re in the same cluster and network policy allows it.
+
+📦 Example:
+
+Pod A → IP: 10.244.0.10
+
+Pod B → IP: 10.244.0.15
+
+From inside Pod A:
+
+curl http://10.244.0.15:8080
+
+
+🗣️ Explanation:
+
+Pod A can directly contact Pod B using B’s IP.
+
+Kubernetes networking ensures no NAT (Network Address Translation) between Pods.
+
+✅ Key Point:
+➡️ Every Pod has its own IP, and all Pods can communicate freely within the cluster (unless restricted).
+
+***********************************************
+
+3️⃣ Pod to Service Networking
+   **********************
+
+Instead of remembering Pod IPs (which change when Pods restart), Kubernetes provides a Service — a stable virtual IP (ClusterIP) that automatically routes traffic to the right Pod(s).
+
+📦 Example:
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: myservice
+spec:
+  selector:
+    app: myapp
+  ports:
+    - port: 80
+      targetPort: 8080
+
+
+🗣️ Explanation:
+
+The Service name myservice gets a stable IP (like 10.96.0.1).
+
+Any Pod in the same namespace can reach it using:
+
+curl http://myservice:80
+
+
+The Service will automatically forward traffic to the matching Pods (app: myapp).
+
+✅ Key Point:
+➡️ Pods → Service → Target Pods
+➡️ Service = Load Balancer inside the cluster
+
+***********************************************
+
+4️⃣ Internet to Service Networking
+   *************************
+
+When you want users outside the cluster (e.g. your browser) to access an application inside Kubernetes, you expose it using:
+
+NodePort
+
+LoadBalancer
+
+Ingress
+
+📦 Example:
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: myweb
+spec:
+  type: NodePort
+  selector:
+    app: web
+  ports:
+    - port: 80
+      targetPort: 8080
+      nodePort: 30007
+
+
+🗣️ Explanation:
+
+Kubernetes opens port 30007 on every node.
+
+You can access the app from your PC:
+
+http://<NodeIP>:30007
+
+
+Kubernetes forwards the request to the right Pod.
+
+✅ Key Point:
+➡️ Internet → NodePort → Service → Pod
+
+✅ Summary Table
+Communication Type	Source → Destination	How it Works	Example
+1. Container → Container	Same Pod	localhost	curl localhost:8080
+2. Pod → Pod	Different Pods	Pod IP	curl 10.244.0.15:8080
+3. Pod → Service	Pod to Service (internal)	Service Name	curl http://myservice
+4. Internet → Service	External User to Cluster	NodePort / LoadBalancer / Ingress	http://<NodeIP>:30007
+
+
+***********************************************
+
+container to container
+**********************
+container is inside the pod
+
+How container to container made communication? --> in our node we have ethernet(ch0) that communicate with containers b/w them we have bridge network 
+flow:  ethernet to --> bridge to --> container
+
+In killer coda
+**************
+whenever you create a ubuntu machine we will be able to see ethernetwork i.e, container speaks with ethernetwork
+
+ip address --> used to see the communication through this command
+
+eg: if we have 2 containers one container communicates with ethernetwork(eth0) i.e, we have bridge network that maintains communication b/w the containers 
+
+pod to pod
+**********
+eg: when it comes to pod to pod  1st pod(eth0) communicates with specified namespace(root network i.e, eth0) inside with bridge(cbr0) then goes to  eth1 then goes to 2nd pod(eth0) thus it makes the connection
+
+
+pod to service networking
+*************************
+
+pod communicates with services i.e (clusterip,loadbalancer,nodeport) through ip tables 
+
+It is used for external purpose
+

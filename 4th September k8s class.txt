@@ -1,0 +1,79 @@
+September 4th k8s class
+*********************** 
+
+1. eks cluster creation with eksctl
+2. services
+
+How to create Eks cluster?
+**************************
+ 1. eksctl
+ 2. manually creating eks cluster
+ 3. By using terraform creating eks cluster
+ 4. By using cloudformation creating a eks cluster
+
+
+1. eksctl 
+   ******
+
+For installing eksctl we need
+*****************************
+a. aws cli
+b. Iam user 
+c. aws configure
+d. install kubectl
+e. install ekstcl
+
+create an ec2 instance with name ubuntu and ami is ubuntu with t2.micro with storage of 20gb then launch it 
+
+copy the publicip and paste it in the powershell
+
+1. ssh ubuntu@publicip
+
+2. sudo apt update -y 
+
+3. sudo apt install unzip -y
+
+4. aws cli install on ubuntu --> for documentation
+	select --> linix
+	copy the curl script
+	unzip file
+
+5. aws configure 
+	paste the access key credentials
+
+6. aws s3 ls
+
+7. installing kubectl procedure-->for documentation
+   ****************************
+1.snap also used to install kubectl  --> it is not preferrd to install in organization
+2.kubernetes repository
+3.binary file --> preffered to install
+	step1:copy the curl script
+	step3: sudo chmod +x kubectl
+	step4: sudo mv kubectl /usr/local/bin
+	step5: kubectl version --client --> used to show the version
+
+8. eksctl creation cluster---> documentation inside click on getting started in this installation
+	copy the whole script and paste in vm
+
+9. eksctl version --> used to check the version
+
+10. eksctl create cluster ---> used to create a cluster
+
+11. kubectl get no --> it will show only 2 workernodes
+
+go to eks in aws --> here we will see the eks cluster if we want to see the nodes also go to instances
+
+cloud formation inside stacks --> It is nothing but a terraform
+
+
+for deleting cluster 
+*********************
+
+12. eksctl delete cluster exciting-sheepdog 
+
+
+----------------------------------------------
+
+--> i don't have a accesskey and secret key how can i communicate with cluster?
+	

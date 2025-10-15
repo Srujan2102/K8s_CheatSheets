@@ -1,0 +1,202 @@
+16th September k8s Replicas class
+*********************************
+
+Scenario
+********
+
+I want to create 6 pods --> for this 6 times manifest file ---> it is very hard to create multiple times at a time for this we are using the  ---> Replicaset
+
+eg: Replica=pod -->If we give replica:6 --> creates 6 pods
+
+Replicas:
+*********
+both replica controller and replica set maintains a desired state (actual state)
+
+1. Replica Controller 
+   ******************
+	* It is the old way of creating the pod 
+	* Right now no one is using -->because in deployment it is not supported
+	    eg: changing from v1->v2 --> the new version is not supported
+	         rollout undo --> i.e, rollback not supported
+	 	  eg: v2 --> v1
+	* In selectors --> it only support "match labels" 
+		eg: it is only (equality working based i.e <key:value>)
+	* This is also pods order of creation and order of deletion
+		eg: 6 pods are created through unique identity(1..2..3..4..5..6) in deletion (1..2..3..4..5..6)
+
+2. Replica set
+   ***********
+	* It supports/handles Deployment level
+	   eg: v1 --> v2  -->changing from v1 to v2
+	       v2 --> v1  --> changing from v2 to v1
+	* In selectors --> It supports match labels i.e (Equality based)
+		    --> it supports match expressions i.e set based labels
+	* This is also order of creating pods and deletion 
+
+
+--------------------------------------------
+
+  # create eks cluster
+  # docker hub --> my image push to ecr
+  # ecr image pulling to our replia set inside
+  # create a service file in this loadbbalancer
+
+
+
+create an instance with t2.micro with 20gb 
+
+ssh ubuntu@publicip 
+
+sudo apt update -y
+
+sudo apt install unzip -y
+
+how to install aws cli on ubuntu --> select the linix and copy the script
+
+aws configure 
+
+aws s3 ls
+
+how to install kubectl on ubuntu 24.04(click on greenwebpage link) --> install binary file of option 3
+
+how to install eksctl on ubuntu 24.04(eksctl istallation) ---> copy the script
+
+ekstcl create cluster --> it creates cluster
+
+aws eks --region ap-south-1 update-kubeconfig --name <clustername> 
+
+kubectl get nodes 
+
+install docker through docker script
+
+login to ecr --> follow the steps
+
+docker pull image yellopage --> from docker hub
+
+docker tag  <>
+
+docker image ls
+
+docker push
+
+--------------------------------------------------------
+
+In aws go to ecr in this create one repository name as dev/appimageyellow then click on create 
+
+---------------------------------------------------
+
+create a repository in GitHub --> myk8s-replica
+
+In powershell
+*************
+clone the repository --> git clone myk8s-replica
+cd myk8s-replica
+code .
+
+replicaset.yaml
+***************
+
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata: 
+  name: rp-pods
+  labels: 
+    app: yellowapp
+    env: dev
+  namespace: devnamespace
+  annotations: 
+    myecrimage: # paste the ECR url
+spec: 
+  replicas: 4
+  minReadySeconds: 6
+  selector: 
+    matchLabels:
+      app: yellowapp-pods  # it is not mandatory to match the labels in metadata
+  template: 
+    metadata:
+      name: podlevellabels
+      labels: 
+        app: yellowapp-pods # this template label should match the selector labels
+    spec:
+      containers: 
+        - name: yellowimage
+          image:  # paste the image url of ECR
+          ports:
+            - name: yellowapp-ports
+              containerPort: 80
+              protocol: TCP
+          startupProbe:
+            httpGet: 
+              path: "/sujan"  #left side is root path right side is sub path for /
+              port: 80
+          livenessProbe:
+            tcpSocket: 
+              port: 80 
+          readinessProbe:
+            exec: 
+              command:
+                - echo hi
+                - touch sujanfile
+          resources:
+            requests: 
+              cpu: 100M
+              memory: 150Mi
+            limits:
+              cpu: 200M
+              memory: 250Mi
+
+              
+svc.yaml
+********
+
+apiVersion: v1
+kind: Service
+metadata: 
+  name: svc-yellow
+spec:
+  type: LoadBalancer 
+  selector: 
+    app: yellowapp 
+  ports:
+    - port: 80 
+
+--------------------------------------------------
+In powershell
+*************
+git add .
+git commit -m "replicaset updated"
+git push
+
+In eks cluster
+**************
+git clone myk8s-replica
+
+cd myk8s-replica
+
+kubectl create ns devnamespace
+
+kubectl apply -f .
+
+kubectl get po --> it won't show because we have to config to change to namespace then only it will work 
+
+kubectl config set-context --current --namespace devnamespace 
+
+kubectl get po
+
+kubectl get all
+
+kubectl describe pod podname
+
+# for this cpu level issue --> increase limit and request size
+# exec issue --> instead of using touch use echo
+# it supports order of creation and deletion
+
+# v1 to v2 and v2 to v1 i.e, old to new , new to old versions handled by the deployment
+
+			|
+			|
+			|
+
+	Continue this topic in Deployment
+---------------------------------------------------------------------------------
+
