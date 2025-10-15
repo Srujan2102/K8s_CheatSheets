@@ -1,0 +1,26 @@
+Aug 25th k8s class 
+******************
+
+How to install k8s?
+*******************
+
+where you install k8s is called a masternode/control plane
+
+where you want to deploy is called a workernode
+
+Entire masternode and workernode is called a k8s cluster
+
+clusters are of 2 types
+1. single node cluster--> having only single workernode
+eg: k3c,minicube,kind,self hosted clusters
+
+2. multi node cluster--> having more than 2 or above
+a. self hosted clusters
+   eg: kubeadm, kops, kube-spray
+b. Cloud hosted clusters/services
+   eg: AWS(EKS), AZURE(AKS)
+
+If a company is not using any cloud that can be called as Onpremise 
+
+How to understand cluster and WN and MN?
+How to install kubeadm with docker?

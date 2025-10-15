@@ -1,0 +1,125 @@
+29th Aug k8s Pod manifestfile Class
+***********************************
+
+manifestfile format
+********************
+
+apiVersion: <apiversion/group>
+
+kind: <resources/workloads ->i.e name>
+
+metadate: more information or additional information 
+	eg: for container we specify (name, namespaces, annotations, endpoints)
+
+spec: which container you want to run 
+
+eg: image, ports inside this spec 
+status: it is nothing but output but we don't use this
+
+
+
+---------------------------------------
+while creating vm below are the terminologies
+
+LTS --> Long Time Support
+HVM --> Hyper visor Machine
+
+--------------------------------------
+
+kubeadm installing in aws account
+**********************************
+long time support -->LTS
+port numbers also should be same
+Container network interface -->CNI it has 3 types 
+1.weave 
+2.flannel 
+3.calico
+
+create 3 instances of t2.medium with 20gb
+	1. masternode
+	2. workernode-1
+	3. workernode-2
+
+open the masternode and copy the public ip address
+ssh ubuntu@ipadress
+
+sudo apt update -y --> do not update in the organization
+
+install docker -->through documentation in worker nodes also 
+
+sudo usermod -aG docker ubuntu
+
+ssh ubuntu@ip 
+
+docker info --> if it shows /var/lib/docker then it is running
+
+paste the CRI-D 
+
+install CRI-D packages and ubuntu packages
+
+Install kubeadm,kubectl,kubelet
+
+In masternode 
+	sudo -i 
+	install kubeadm init -> by installing this we made the communication b/w kubeadm and docker host ---> it creates a .kube/config
+	Copy the join token and store it and for this add cri socket 
+	Copy the creating directory script 
+	exit
+
+paste the script here in masternode
+
+In workernode 
+	sudo -i 
+	paste the join token script
+
+In masternode 
+	kubectl get nodes --> it shows not ready
+	paste the flannel script for CNI or weave script
+	kubectl get nodes --> it shows as ready because of flannel
+
+
+vi pod-test.yaml
+****************
+
+apiVersion: v1 
+kind: Pod 
+metadata:
+  name: test-pod 
+spec: 
+  containers:
+    - name: my-testimage
+      image: "httpd:latest"
+      ports:
+        - containerPort: 80 
+	  protocol: TCP
+
+kubectl apply -f pod-test.yaml --> it shows output log
+
+kubectl get pods -w -->it shows ContainerCreating 
+
+kubectl describe pod test-pod --> inside this shows the logs
+
+copy the workernode ip address and paste it in another tab then we can see the output
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

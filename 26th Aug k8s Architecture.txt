@@ -1,0 +1,86 @@
+Aug 26th k8s Architecture 
+*************************
+
+masternode components
+*********************
+1. scheduler
+2. ETCD
+3. control manage
+4. API-server
+5. control plane
+
+Control plane 
+************* 
+It is also called as Masternode
+
+k8s API-server
+**************
+It is used to communicate with all components like masternode and workernode
+
+ETCD
+**** 
+It is responsible to store key value type like storage
+
+Scheduler
+*********
+It is used to find the best workernode  
+
+control managers 
+****************
+Ensure the cluster remains in its desired state(how many pods are running in kubectl) manage the controllers
+
+controller managers are of 4 types
+	1. Node controller---> Monitor the health of worker nodes 
+	2. Replication Controller---> Maintain the correct number of running pods
+	3. Endpoint Controller--> Maintains the series of endpoints
+	4. Service account controller----> Manages the networking configuration
+	5. cloud controller manager 
+		eg: if it uses any cloud then we can use cloud controller if it is not used we can't use when using the self hosted
+
+
+workernode components
+*********************
+1. kubelet
+2. kubeproxy
+3. pod
+4. container run time
+
+
+kubelet
+*******
+It is an agent that Communicates with the Apiserver to execute pod specifications.
+
+Ensures containers inside pods are running properly. 
+
+Restores failed containers automatically.
+
+kubeproxy
+*********
+Nodes/workloads -->Handles network for pods
+
+kubeproxy allocate ip address for that firstly we need to install CNI(container network interface) then only kubeproxy  allocate ip address then ip address allocates the pods 
+
+How to install CNI plugins?
+***************************
+for this we need to install below plugins only on self hosted
+1. weave
+2. flannel
+3. calico 
+
+Container Run time
+******************
+Creating containers i.e container life cycle that manintains the containers 
+
+----------------------------------------------------------------------------------------------
+
+For kubeadm we need following requirements
+******************************************
+1. 3 EC2 vms  2virutual cpus  4GBmemory
+2. install Docker and container-d 
+3. install ubuntu/Debian packages , contianer-d additional packages 
+4. install kubelet and kubeadm and kubectl 
+5. we will use join command in the masternode
+6. we will use init command in the workernode
+
+
+Kubernetes kubeadm install --> for documentation

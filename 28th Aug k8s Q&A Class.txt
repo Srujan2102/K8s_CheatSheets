@@ -1,0 +1,68 @@
+28th Aug k8s Q&A Class
+**********************
+
+1. One user wants to communicate with MN/control plane ways?
+
+eg: one person wants to create a pod for that purpose he needs to interact with apiserver that also have 2 ways 
+1. code/json 
+2. kubectl(CLI) --> used to communicate  
+	
+
+--------------------------------------------
+2. what is pod and how many types of pods i.e containers?
+
+    Smallest Deployment unit Containing one or more containers
+
+    Collection of containers called as pods 
+
+kubectl(CLI) --> used to communicate  
+	It is of two types
+	1. Imperative way/mode -> cmd line create a pod not maintains history
+	2. Declarative way/mode -> It is a manifest fiel i.e yaml format that maintains the history
+
+Imperative mode
+***************
+kubectl run pod sujan --image=nginx --> used to create the pod with imperative mode
+
+
+kubectl get no --> used to see the nodes
+kubectl api-resources --> used to see the resources 
+kubectl api-resources | grep node --> used to see the  particular resource
+
+
+In api-resources/workload it shows versions. It is of 3 types
+1. Alpha
+2. Beta
+3. Stable --> In this only we will you the apiversion groups
+
+--------------------------------------------
+
+3. yaml format?
+
+values store in <key>:<value> format
+	1. simple text 
+		eg: datatypes: 
+		    1. text
+			eg: name: "sujan"
+			    name: 'sujan'
+			    name: sujan	
+		    2. number
+			eg: age:29
+		    3. Boolean
+			eg: marriage:true/yes
+	2. complex text
+	   datatypes:
+	    1. list/array
+		eg: list -> Qual:["devops","aws","azure"]
+	        eg: array -> Qual:
+			     - devops
+			     - aws
+			     - azure
+	    2. object/map
+		address:
+		  RoomNo: 2-71
+		  village: "kothagudem"
+		  LandMark:
+		    - Temple
+  		    - Water Tank
+		  Phone numbers:["8497942709"]	

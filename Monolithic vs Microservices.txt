@@ -1,0 +1,73 @@
+Kubernetes Introduction
+***********************
+
+In containers we use different tools like Docker, CRI-d, rklt, cri-o
+
+k8s is a self healing, zero downtime deployment , scaling,high availability
+
+--------------------------------------------------------------------
+
+🧱 Monolithic Architecture
+
+Definition:
+All parts of the application (UI, business logic, database access, etc.) are built and deployed together as one single unit.
+
+Example:
+If you build an e-commerce app, everything — user login, products, cart, payment — runs inside a single application (e.g., one WAR or JAR file).
+
+✅ Advantages:
+
+Simple to develop and test (at the beginning).
+
+Easy to deploy (only one file or package).
+
+Good for small-scale applications.
+
+❌ Disadvantages:
+
+Difficult to scale individual components (must scale the whole app).
+
+Hard to maintain as code grows.
+
+Small change requires redeploying the whole application.
+
+If one module fails, it can affect the entire system.
+
+⚙️ Microservices Architecture
+
+Definition:
+The application is broken into small, independent services, each handling one specific function. These services communicate through APIs (usually REST or messaging).
+
+Example:
+In the same e-commerce app:
+
+User Service → handles user login/signup
+
+Product Service → manages product details
+
+Cart Service → manages shopping cart
+
+Payment Service → handles payment
+
+Each one runs separately and can be deployed, updated, and scaled independently.
+
+✅ Advantages:
+
+Easier to scale and deploy individual components.
+
+Fault isolation — one service failing won’t crash the whole system.
+
+Easier to use different technologies for different services.
+
+Faster updates and continuous deployment.
+
+❌ Disadvantages:
+
+More complex to design and manage.
+
+Requires good DevOps practices (Docker, Kubernetes, CI/CD).
+
+Communication overhead between services.
+
+Difficult to test the whole system end-to-end.
+
